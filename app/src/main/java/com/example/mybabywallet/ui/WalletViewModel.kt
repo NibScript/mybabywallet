@@ -17,8 +17,10 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
     val totalIngresos = dao.totalIngresos()
     val totalGastos = dao.totalGastos()
 
-    fun agregarTransaccion(titulo: String, montoStr: String, esIngreso: Boolean) {
-        if (titulo.isBlank() || montoStr.isBlank()) return // Validación básica
+    // Agregamos el parámetro imagenPath con valor por defecto vacío ""
+    // Agregamos lat y long como parámetros
+    fun agregarTransaccion(titulo: String, montoStr: String, esIngreso: Boolean, imagenPath: String, lat: Double, long: Double) {
+        if (titulo.isBlank() || montoStr.isBlank()) return
 
         val monto = montoStr.toDoubleOrNull() ?: 0.0
         if (monto <= 0) return
@@ -27,14 +29,16 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
             titulo = titulo,
             monto = monto,
             tipo = if (esIngreso) "INGRESO" else "GASTO",
-            fecha = System.currentTimeMillis()
+            fecha = System.currentTimeMillis(),
+            imagenPath = imagenPath,
+            latitud = lat,   // Guardamos
+            longitud = long  // Guardamos
         )
 
         viewModelScope.launch(Dispatchers.IO) {
             dao.insertar(nuevaTransaccion)
         }
     }
-
     fun eliminarTransaccion(transaccion: Transaccion) {
         viewModelScope.launch(Dispatchers.IO) {
             dao.borrar(transaccion)
