@@ -37,7 +37,12 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.ui.draw.scale
 
 
 // ESTOS SON LOS QUE SUELEN FALTAR:
@@ -46,50 +51,96 @@ import com.example.mybabywallet.ui.WalletViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WalletScreen(viewModel: WalletViewModel = viewModel()) {
-    // Observamos los datos de la base de datos en tiempo real
+fun WalletScreen(
+    usuarioId: Int, // <--- Nuevo
+    viewModel: WalletViewModel = viewModel(),
+    onLogout: () -> Unit
+) {
+    // Al iniciar la pantalla, le decimos al ViewModel quién es el dueño
+    LaunchedEffect(usuarioId) {
+        viewModel.setUsuarioActual(usuarioId)
+    }
+    // Observamos los datos (esto déjalo igual que antes)
     val listaTransacciones by viewModel.listaTransacciones.observeAsState(initial = emptyList())
     val totalIngresos by viewModel.totalIngresos.observeAsState(initial = 0.0)
     val totalGastos by viewModel.totalGastos.observeAsState(initial = 0.0)
-
-    // Calcular saldo
     val saldo = (totalIngresos ?: 0.0) - (totalGastos ?: 0.0)
-
-    // Estado para mostrar el cuadro de diálogo de "Agregar"
     var mostrarDialogo by remember { mutableStateOf(false) }
 
     Scaffold(
+        // 2. AGREGAMOS LA BARRA SUPERIOR CON EL BOTÓN DE SALIR
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("MyBabyWallet", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                ),
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión")
+                    }
+                }
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = { mostrarDialogo = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Agregar")
             }
         }
     ) { padding ->
+        // Aquí sigue tu columna con el contenido de siempre...
+        // Solo asegúrate de pasar el 'padding' al modifier de la Column
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
+                .padding(padding) // <--- Importante: Usa el padding del Scaffold
                 .padding(16.dp)
         ) {
+            // ... (MANTÉN TODO EL RESTO DE TU CÓDIGO DE LAS TARJETAS Y LISTAS IGUAL) ...
+
+            // Si te lías pegando, solo asegúrate de que el 'Scaffold' envuelva todo
+            // y tenga el bloque 'topBar' nuevo.
             // 1. TARJETA DE SALDO
+            // 1. TARJETA DE SALDO CON ANIMACIÓN
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp).fillMaxWidth(),
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("Saldo Disponible", fontSize = 18.sp)
+
+                    // --- ANIMACIÓN 1: El color cambia suavemente entre Verde y Rojo ---
+                    val colorAnimado by animateColorAsState(
+                        targetValue = if (saldo >= 0) Color(0xFF2E7D32) else Color(0xFFC62828),
+                        animationSpec = tween(durationMillis = 1000), // Tarda 1 segundo en cambiar
+                        label = "CambioColor"
+                    )
+
+                    // --- ANIMACIÓN 2: El texto crece un poquito (latido) al cambiar el saldo ---
+                    val escalaAnimada by animateFloatAsState(
+                        targetValue = if (saldo == 0.0) 1f else 1.1f, // Truco visual simple
+                        animationSpec = tween(durationMillis = 500),
+                        label = "Escala"
+                    )
+
                     Text(
                         text = "$ ${String.format("%.0f", saldo)}",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (saldo >= 0) Color(0xFF2E7D32) else Color(0xFFC62828)
+                        color = colorAnimado, // Usamos el color animado
+                        modifier = Modifier.scale(escalaAnimada) // Usamos la escala animada
                     )
                 }
             }
-
             // 2. LISTA DE MOVIMIENTOS
             Text("Últimos movimientos", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))

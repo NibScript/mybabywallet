@@ -8,8 +8,9 @@ import androidx.room.Query
 
 @Dao
 interface TransaccionDao {
-    @Query("SELECT * FROM tabla_transacciones ORDER BY fecha DESC")
-    fun obtenerTodas(): LiveData<List<Transaccion>>
+    // 1. Filtrar lista por usuario
+    @Query("SELECT * FROM tabla_transacciones WHERE usuarioId = :userId ORDER BY fecha DESC")
+    fun obtenerPorUsuario(userId: Int): LiveData<List<Transaccion>>
 
     @Insert
     suspend fun insertar(transaccion: Transaccion)
@@ -17,10 +18,10 @@ interface TransaccionDao {
     @Delete
     suspend fun borrar(transaccion: Transaccion)
 
-    // CORRECCIÓN AQUÍ: Usamos COALESCE para que devuelva 0.0 en vez de NULL si está vacía
-    @Query("SELECT COALESCE(SUM(monto), 0) FROM tabla_transacciones WHERE tipo = 'INGRESO'")
-    fun totalIngresos(): LiveData<Double>
+    // 2. Filtrar sumas por usuario
+    @Query("SELECT COALESCE(SUM(monto), 0) FROM tabla_transacciones WHERE tipo = 'INGRESO' AND usuarioId = :userId")
+    fun totalIngresos(userId: Int): LiveData<Double>
 
-    @Query("SELECT COALESCE(SUM(monto), 0) FROM tabla_transacciones WHERE tipo = 'GASTO'")
-    fun totalGastos(): LiveData<Double>
+    @Query("SELECT COALESCE(SUM(monto), 0) FROM tabla_transacciones WHERE tipo = 'GASTO' AND usuarioId = :userId")
+    fun totalGastos(userId: Int): LiveData<Double>
 }

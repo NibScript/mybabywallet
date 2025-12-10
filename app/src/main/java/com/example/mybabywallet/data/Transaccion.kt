@@ -10,7 +10,8 @@ data class Transaccion(
     val monto: Double,
     val tipo: String,
     val fecha: Long,
-    val imagenPath: String = "", // La foto que ya funciona
-    val latitud: Double = 0.0,   // GPS 1
-    val longitud: Double = 0.0   // GPS 2 (Nuevo)
+    val imagenPath: String = "",
+    val latitud: Double = 0.0,
+    val longitud: Double = 0.0,
+    val usuarioId: Int // <--- NUEVO: La etiqueta del dueño
 )

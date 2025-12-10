@@ -5,9 +5,13 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Transaccion::class], version = 1, exportSchema = false)
+// Modifica tu archivo AppDatabase.kt para que quede así:
+
+@Database(entities = [Transaccion::class, Usuario::class], version = 3, exportSchema = false) // <--- OJO AQUÍ
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun transaccionDao(): TransaccionDao
+    abstract fun usuarioDao(): UsuarioDao // <--- NUEVO
 
     companion object {
         @Volatile
@@ -19,7 +23,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "billetera_db"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration() // <--- ¡ESTA ES LA LÍNEA MÁGICA!
+                    .build()
                 INSTANCE = instance
                 instance
             }
