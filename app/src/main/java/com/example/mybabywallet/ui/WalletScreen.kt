@@ -1,74 +1,91 @@
 package com.example.mybabywallet.ui
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import java.text.SimpleDateFormat
-import java.util.*
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.FileProvider
-import androidx.compose.material.icons.filled.Check
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
-import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
-import com.google.android.gms.location.LocationServices
-import android.Manifest
-import android.widget.Toast
-import androidx.compose.material.icons.filled.LocationOn
-import android.content.Intent
-import android.net.Uri
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.ui.draw.scale
-
-
-// ESTOS SON LOS QUE SUELEN FALTAR:
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.mybabywallet.data.Transaccion
-import com.example.mybabywallet.ui.WalletViewModel
+import com.google.android.gms.location.LocationServices
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WalletScreen(
-    usuarioId: Int, // <--- Nuevo
+    usuarioId: Int,
     viewModel: WalletViewModel = viewModel(),
     onLogout: () -> Unit
 ) {
+    val context = LocalContext.current
+
     // Al iniciar la pantalla, le decimos al ViewModel quién es el dueño
     LaunchedEffect(usuarioId) {
         viewModel.setUsuarioActual(usuarioId)
     }
-    // Observamos los datos (esto déjalo igual que antes)
+
+    // --- OBSERVADORES DE DATOS ---
     val listaTransacciones by viewModel.listaTransacciones.observeAsState(initial = emptyList())
     val totalIngresos by viewModel.totalIngresos.observeAsState(initial = 0.0)
     val totalGastos by viewModel.totalGastos.observeAsState(initial = 0.0)
     val saldo = (totalIngresos ?: 0.0) - (totalGastos ?: 0.0)
+
+    // --- OBSERVADOR DE SINCRONIZACIÓN (SPRING BOOT) ---
+    val mensajeSync by viewModel.estadoSincronizacion.observeAsState("")
+
+    // Si hay mensaje de sincronización, mostramos Toast
+    LaunchedEffect(mensajeSync) {
+        if (mensajeSync.isNotEmpty()) {
+            Toast.makeText(context, mensajeSync, Toast.LENGTH_SHORT).show()
+            viewModel.limpiarMensajeSync()
+        }
+    }
+
+    // Estados de Diálogos
     var mostrarDialogo by remember { mutableStateOf(false) }
+    var mostrarConversor by remember { mutableStateOf(false) }
 
     Scaffold(
-        // 2. AGREGAMOS LA BARRA SUPERIOR CON EL BOTÓN DE SALIR
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text("MyBabyWallet", fontWeight = FontWeight.Bold) },
@@ -78,6 +95,17 @@ fun WalletScreen(
                     actionIconContentColor = Color.White
                 ),
                 actions = {
+                    // 1. BOTÓN SINCRONIZAR (SPRING BOOT) - NUEVO
+                    IconButton(onClick = { viewModel.sincronizarConNube() }) {
+                        Icon(Icons.Default.Share, contentDescription = "Sincronizar")
+                    }
+
+                    // 2. BOTÓN CONVERSOR (API EXTERNA)
+                    IconButton(onClick = { mostrarConversor = true }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Conversor")
+                    }
+
+                    // 3. BOTÓN SALIR
                     IconButton(onClick = onLogout) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión")
                     }
@@ -90,19 +118,12 @@ fun WalletScreen(
             }
         }
     ) { padding ->
-        // Aquí sigue tu columna con el contenido de siempre...
-        // Solo asegúrate de pasar el 'padding' al modifier de la Column
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding) // <--- Importante: Usa el padding del Scaffold
+                .padding(padding)
                 .padding(16.dp)
         ) {
-            // ... (MANTÉN TODO EL RESTO DE TU CÓDIGO DE LAS TARJETAS Y LISTAS IGUAL) ...
-
-            // Si te lías pegando, solo asegúrate de que el 'Scaffold' envuelva todo
-            // y tenga el bloque 'topBar' nuevo.
-            // 1. TARJETA DE SALDO
             // 1. TARJETA DE SALDO CON ANIMACIÓN
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -118,16 +139,16 @@ fun WalletScreen(
                 ) {
                     Text("Saldo Disponible", fontSize = 18.sp)
 
-                    // --- ANIMACIÓN 1: El color cambia suavemente entre Verde y Rojo ---
+                    // Animación Color
                     val colorAnimado by animateColorAsState(
                         targetValue = if (saldo >= 0) Color(0xFF2E7D32) else Color(0xFFC62828),
-                        animationSpec = tween(durationMillis = 1000), // Tarda 1 segundo en cambiar
+                        animationSpec = tween(durationMillis = 1000),
                         label = "CambioColor"
                     )
 
-                    // --- ANIMACIÓN 2: El texto crece un poquito (latido) al cambiar el saldo ---
+                    // Animación Escala
                     val escalaAnimada by animateFloatAsState(
-                        targetValue = if (saldo == 0.0) 1f else 1.1f, // Truco visual simple
+                        targetValue = if (saldo == 0.0) 1f else 1.1f,
                         animationSpec = tween(durationMillis = 500),
                         label = "Escala"
                     )
@@ -136,11 +157,12 @@ fun WalletScreen(
                         text = "$ ${String.format("%.0f", saldo)}",
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
-                        color = colorAnimado, // Usamos el color animado
-                        modifier = Modifier.scale(escalaAnimada) // Usamos la escala animada
+                        color = colorAnimado,
+                        modifier = Modifier.scale(escalaAnimada)
                     )
                 }
             }
+
             // 2. LISTA DE MOVIMIENTOS
             Text("Últimos movimientos", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
@@ -159,25 +181,26 @@ fun WalletScreen(
         }
     }
 
-    // El formulario emergente
+    // DIÁLOGOS EMERGENTES
     if (mostrarDialogo) {
         DialogoAgregarTransaccion(
             onDismiss = { mostrarDialogo = false },
-            onConfirm = { titulo, monto, esIngreso, rutaFoto, lat, long -> // Nuevos parámetros
-                // Pasamos todo al ViewModel
+            onConfirm = { titulo, monto, esIngreso, rutaFoto, lat, long ->
                 viewModel.agregarTransaccion(titulo, monto, esIngreso, rutaFoto, lat, long)
                 mostrarDialogo = false
             }
         )
     }
+
+    if (mostrarConversor) {
+        DialogoConversor(viewModel = viewModel, onDismiss = { mostrarConversor = false })
+    }
 }
 
-// Componente para dibujar cada fila de la lista
+// --- COMPONENTE: FILA DE TRANSACCIÓN ---
 @Composable
 fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
     val context = LocalContext.current
-
-    // Estado para controlar si el popup de la foto está abierto
     var mostrarFotoGrande by remember { mutableStateOf(false) }
 
     Card(
@@ -194,7 +217,7 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 1. FOTO PEQUEÑA (Clickable)
+                // FOTO
                 if (transaccion.imagenPath.isNotEmpty()) {
                     AsyncImage(
                         model = transaccion.imagenPath,
@@ -202,14 +225,13 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
                         modifier = Modifier
                             .size(50.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            // AQUÍ ESTÁ EL TRUCO: Al hacer click, activamos el popup
                             .clickable { mostrarFotoGrande = true },
                         contentScale = ContentScale.Crop
                     )
                     Spacer(modifier = Modifier.width(16.dp))
                 }
 
-                // 2. DATOS
+                // DATOS TEXTO
                 Column {
                     Text(transaccion.titulo, fontWeight = FontWeight.Bold)
                     val fechaFormato = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(transaccion.fecha))
@@ -221,9 +243,9 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
                 }
             }
 
-            // 3. ACCIONES
+            // ACCIONES
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Botón MAPA
+                // MAPA
                 if (transaccion.latitud != 0.0) {
                     IconButton(onClick = {
                         val uri = Uri.parse("geo:${transaccion.latitud},${transaccion.longitud}?q=${transaccion.latitud},${transaccion.longitud}(${transaccion.titulo})")
@@ -236,7 +258,7 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
                     }
                 }
 
-                // Monto y Borrar
+                // MONTO Y BORRAR
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = (if (transaccion.tipo == "INGRESO") "+ " else "- ") + "$ ${transaccion.monto.toInt()}",
@@ -251,10 +273,9 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
         }
     }
 
-    // --- CÓDIGO DEL POPUP (Zoom de Imagen) ---
+    // POPUP FOTO GRANDE
     if (mostrarFotoGrande) {
         Dialog(onDismissRequest = { mostrarFotoGrande = false }) {
-            // Una tarjeta simple para contener la foto grande
             Card(
                 modifier = Modifier.fillMaxWidth().height(400.dp),
                 shape = RoundedCornerShape(16.dp)
@@ -266,10 +287,9 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .background(Color.Black), // Fondo negro para que resalte
-                        contentScale = ContentScale.Fit // Fit para ver la foto completa sin recortes
+                            .background(Color.Black),
+                        contentScale = ContentScale.Fit
                     )
-                    // Botón para cerrar (opcional, ya que tocando fuera se cierra)
                     Button(
                         onClick = { mostrarFotoGrande = false },
                         modifier = Modifier.fillMaxWidth(),
@@ -282,23 +302,20 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
         }
     }
 }
-// Componente para el Formulario (Dialog)
+
+// --- DIÁLOGO AGREGAR ---
 @Composable
 fun DialogoAgregarTransaccion(onDismiss: () -> Unit, onConfirm: (String, String, Boolean, String, Double, Double) -> Unit) {
     val context = LocalContext.current
     var titulo by remember { mutableStateOf("") }
     var monto by remember { mutableStateOf("") }
     var esIngreso by remember { mutableStateOf(false) }
-
-    // Variables Foto
     var fotoPathActual by remember { mutableStateOf("") }
-
-    // Variables GPS
     var latitud by remember { mutableStateOf(0.0) }
     var longitud by remember { mutableStateOf(0.0) }
     var ubicacionTexto by remember { mutableStateOf("Sin ubicación") }
 
-    // Lógica Cámara (Igual que antes)
+    // CÁMARA
     val launcherCamara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { exito ->
         if (!exito) fotoPathActual = ""
     }
@@ -310,14 +327,10 @@ fun DialogoAgregarTransaccion(onDismiss: () -> Unit, onConfirm: (String, String,
     }
     val permisoCamara = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) abrirCamara() }
 
-    // Lógica GPS (NUEVO)
+    // GPS
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-
-    // Asegúrate de tener este import arriba: import android.widget.Toast
-
     val obtenerUbicacion = {
-        Toast.makeText(context, "Buscando señal GPS...", Toast.LENGTH_SHORT).show() // Feedback visual
-
+        Toast.makeText(context, "Buscando señal GPS...", Toast.LENGTH_SHORT).show()
         try {
             fusedLocationClient.lastLocation.addOnSuccessListener { location ->
                 if (location != null) {
@@ -327,7 +340,7 @@ fun DialogoAgregarTransaccion(onDismiss: () -> Unit, onConfirm: (String, String,
                     Toast.makeText(context, "¡Ubicación encontrada!", Toast.LENGTH_SHORT).show()
                 } else {
                     ubicacionTexto = "GPS activo pero sin memoria reciente"
-                    Toast.makeText(context, "Abre Google Maps para calibrar el GPS", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Abre Google Maps para calibrar", Toast.LENGTH_LONG).show()
                 }
             }
         } catch (e: SecurityException) {
@@ -335,10 +348,7 @@ fun DialogoAgregarTransaccion(onDismiss: () -> Unit, onConfirm: (String, String,
             Toast.makeText(context, "Faltan permisos", Toast.LENGTH_SHORT).show()
         }
     }
-
-    val permisoGPS = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
-        if (concedido) obtenerUbicacion() else ubicacionTexto = "Permiso denegado"
-    }
+    val permisoGPS = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) obtenerUbicacion() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -347,8 +357,7 @@ fun DialogoAgregarTransaccion(onDismiss: () -> Unit, onConfirm: (String, String,
             Column {
                 OutlinedTextField(value = titulo, onValueChange = { titulo = it }, label = { Text("Título") })
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(value = monto, onValueChange = { monto = it }, label = { Text("Monto") })
-
+                OutlinedTextField(value = monto, onValueChange = { monto = it }, label = { Text("Monto") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = esIngreso, onCheckedChange = { esIngreso = it })
                     Text("Es un Ingreso")
@@ -368,17 +377,13 @@ fun DialogoAgregarTransaccion(onDismiss: () -> Unit, onConfirm: (String, String,
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(if (fotoPathActual.isNotEmpty()) "Foto Lista" else "Tomar Foto")
                 }
-
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // BOTÓN GPS (NUEVO)
+                // BOTÓN GPS
                 Button(
                     onClick = {
-                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                            obtenerUbicacion()
-                        } else {
-                            permisoGPS.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                        }
+                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) obtenerUbicacion()
+                        else permisoGPS.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                     },
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = if (latitud != 0.0) Color(0xFF1565C0) else Color.Gray)
@@ -393,17 +398,50 @@ fun DialogoAgregarTransaccion(onDismiss: () -> Unit, onConfirm: (String, String,
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(titulo, monto, esIngreso, fotoPathActual, latitud, longitud) }) {
-                Text("Guardar")
-            }
+            Button(onClick = { onConfirm(titulo, monto, esIngreso, fotoPathActual, latitud, longitud) }) { Text("Guardar") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
     )
-}// Función auxiliar para crear un archivo temporal donde se guardará la foto
+}
+
 fun crearArchivoImagen(context: android.content.Context): java.io.File {
     val timeStamp = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date())
     val nombreArchivo = "JPEG_${timeStamp}_"
-    // Usamos el directorio de imágenes privadas de la app
     val directorio = context.getExternalFilesDir(android.os.Environment.DIRECTORY_PICTURES)
     return java.io.File.createTempFile(nombreArchivo, ".jpg", directorio)
+}
+
+// --- DIÁLOGO CONVERSOR ---
+@Composable
+fun DialogoConversor(viewModel: WalletViewModel, onDismiss: () -> Unit) {
+    var monto by remember { mutableStateOf("") }
+    val resultado by viewModel.resultadoConversion.observeAsState("")
+    val cargando by viewModel.cargandoConversion.observeAsState(false)
+
+    AlertDialog(
+        onDismissRequest = { viewModel.limpiarConversor(); onDismiss() },
+        title = { Text("Conversor de Moneda") },
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Ingresa monto en Pesos (CLP):", fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(value = monto, onValueChange = { monto = it }, label = { Text("$ Monto") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true)
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (cargando) CircularProgressIndicator()
+                else if (resultado.isNotEmpty()) {
+                    Text(text = resultado, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                    Button(onClick = { viewModel.convertirMoneda(monto.toDoubleOrNull() ?: 0.0, "DOLAR") }) { Text("A Dólar") }
+                    Button(onClick = { viewModel.convertirMoneda(monto.toDoubleOrNull() ?: 0.0, "UF") }) { Text("A UF") }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { viewModel.limpiarConversor(); onDismiss() }) { Text("Cerrar") }
+        }
+    )
 }

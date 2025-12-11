@@ -19,3 +19,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Evitar que R8 rompa Retrofit y Gson
+-keep class com.example.mybabywallet.data.** { *; }
+-keep class com.example.mybabywallet.data.network.** { *; }
+
+# Reglas estándar de Retrofit
+-keepattributes Signature
+-keepattributes *Annotation*
+-keep class retrofit2.** { *; }
+-keep class okhttp3.** { *; }
+-keep class com.google.gson.** { *; }

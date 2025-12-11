@@ -1,8 +1,10 @@
 package com.example.mybabywallet.data
 
+import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+@Keep
 @Entity(tableName = "tabla_transacciones")
 data class Transaccion(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
