@@ -8,7 +8,7 @@ import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import com.example.mybabywallet.data.AppDatabase
 import com.example.mybabywallet.data.Transaccion
-import com.example.mybabywallet.data.network.RetrofitClient // Asegúrate de que este import exista
+import com.example.mybabywallet.data.network.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -16,10 +16,9 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
 
     private val dao = AppDatabase.getDatabase(application).transaccionDao()
 
-    // --- LÓGICA DE USUARIOS (MULTI-USUARIO) ---
+    // LÓGICA DE USUARIOS
     private val _usuarioId = MutableLiveData<Int>()
 
-    // Las listas se actualizan automáticamente según el usuario logueado
     val listaTransacciones: LiveData<List<Transaccion>> = _usuarioId.switchMap { id ->
         dao.obtenerPorUsuario(id)
     }
@@ -36,7 +35,7 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
         _usuarioId.value = id
     }
 
-    // --- CRUD BASE DE DATOS LOCAL (ROOM) ---
+    // BASE DE DATOS LOCAL (ROOM)
     fun agregarTransaccion(titulo: String, montoStr: String, esIngreso: Boolean, imagenPath: String, lat: Double, long: Double) {
         val currentUserId = _usuarioId.value ?: return
 
@@ -66,7 +65,7 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // --- API EXTERNA: CONVERSOR DE MONEDA ---
+    // API CONVERSOR DE MONEDA
     val resultadoConversion = MutableLiveData<String>()
     val cargandoConversion = MutableLiveData<Boolean>(false)
 
@@ -76,7 +75,6 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // 1. Llamamos a Retrofit para obtener el valor del día
                 val respuesta = if (monedaDestino == "DOLAR") {
                     RetrofitClient.apiExterna.obtenerDolar()
                 } else {
@@ -85,7 +83,6 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
 
                 val valorMoneda = respuesta.serie.firstOrNull()?.valor ?: 0.0
 
-                // 2. Calculamos
                 if (valorMoneda > 0) {
                     val total = montoPesos / valorMoneda
                     val simbolo = if (monedaDestino == "DOLAR") "USD" else "UF"
@@ -108,7 +105,7 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
         resultadoConversion.value = ""
     }
 
-    // --- MICROSERVICIO PROPIO: SINCRONIZACIÓN SPRING BOOT ---
+    // MICROSERVICIO
     val estadoSincronizacion = MutableLiveData<String>()
 
     fun sincronizarConNube() {
@@ -123,7 +120,6 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                // Enviamos la lista al backend
                 val respuesta = RetrofitClient.apiSpring.sincronizarDatos(transaccionesLocales)
 
                 if (respuesta.isSuccessful) {
@@ -132,8 +128,6 @@ class WalletViewModel(application: Application) : AndroidViewModel(application) 
                     estadoSincronizacion.postValue("Error Servidor: ${respuesta.code()}")
                 }
             } catch (e: Exception) {
-                // Si el servidor local está apagado, caerá aquí.
-                // Esto es suficiente para demostrar el intento de conexión.
                 estadoSincronizacion.postValue("Fallo de conexión con Servidor Local (¿Está encendido?)")
             }
         }

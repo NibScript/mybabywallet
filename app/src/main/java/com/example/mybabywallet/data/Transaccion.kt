@@ -15,5 +15,5 @@ data class Transaccion(
     val imagenPath: String = "",
     val latitud: Double = 0.0,
     val longitud: Double = 0.0,
-    val usuarioId: Int // <--- NUEVO: La etiqueta del dueño
+    val usuarioId: Int
 )

@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     startDestination = "login"
                 ) {
-                    // PANTALLA 1: LOGIN
+                    // LOGIN
                     composable(
                         route = "login",
                         enterTransition = {
@@ -35,9 +35,7 @@ class MainActivity : ComponentActivity() {
                         }
                     ) {
                         LoginScreen(
-                            // AHORA RECIBIMOS EL ID DEL USUARIO (userId)
                             onLoginSuccess = { userId ->
-                                // Navegamos a home llevándonos el ID en la ruta: "home/1", "home/2", etc.
                                 navController.navigate("home/$userId") {
                                     popUpTo("login") { inclusive = true }
                                 }
@@ -46,7 +44,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // PANTALLA 2: REGISTRO
+                    // REGISTRO
                     composable(
                         route = "registro",
                         enterTransition = {
@@ -62,10 +60,10 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // PANTALLA 3: HOME (Ahora dinámica por usuario)
+                    // HOME
                     composable(
-                        route = "home/{userId}", // <--- Ruta dinámica
-                        arguments = listOf(navArgument("userId") { type = NavType.IntType }), // <--- Definimos que recibe un número
+                        route = "home/{userId}",
+                        arguments = listOf(navArgument("userId") { type = NavType.IntType }),
                         enterTransition = {
                             slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(700))
                         },
@@ -73,13 +71,11 @@ class MainActivity : ComponentActivity() {
                             slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(700))
                         }
                     ) { backStackEntry ->
-                        // Recuperamos el ID que venía en la ruta
                         val userId = backStackEntry.arguments?.getInt("userId") ?: 0
 
                         WalletScreen(
-                            usuarioId = userId, // <--- Se lo pasamos a la pantalla
+                            usuarioId = userId,
                             onLogout = {
-                                // Al salir, volvemos al login y borramos historial
                                 navController.navigate("login") {
                                     popUpTo("home/{userId}") { inclusive = true }
                                 }

@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 class LoginViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDatabase.getDatabase(application).usuarioDao()
 
-    // Estados para la vista
     val loginExitoso = MutableLiveData<Int>()
     val registroExitoso = MutableLiveData<Boolean>()
     val errorMensaje = MutableLiveData<String?>()
@@ -50,6 +49,5 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Función para limpiar errores después de mostrarlos
     fun limpiarErrores() { errorMensaje.value = null }
 }

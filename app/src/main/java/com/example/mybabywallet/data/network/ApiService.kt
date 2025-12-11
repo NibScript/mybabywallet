@@ -7,21 +7,20 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 
-// Modelos para el Dólar (API Externa) - YA LO TIENES
+// Modelos para el Dólar
 @Keep
 data class RespuestaIndicador(val serie: List<IndicadorDia>)
 @Keep data class IndicadorDia(val fecha: String, val valor: Double)
 
 interface ApiService {
-    // 1. API Externa (Dólar)
+    // API
     @GET("dolar")
     suspend fun obtenerDolar(): RespuestaIndicador
 
     @GET("uf")
     suspend fun obtenerUf(): RespuestaIndicador
 
-    // 2. MICROSERVICIO SPRING BOOT (Nuevo)
-    // Asumimos que tu Spring Boot tiene un endpoint: POST /api/transacciones/sincronizar
+    // MICROSERVICIO
     @POST("transacciones/sincronizar")
     suspend fun sincronizarDatos(@Body transacciones: List<Transaccion>): Response<Void>
 }

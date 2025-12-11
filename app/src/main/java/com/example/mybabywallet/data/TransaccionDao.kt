@@ -8,7 +8,7 @@ import androidx.room.Query
 
 @Dao
 interface TransaccionDao {
-    // 1. Filtrar lista por usuario
+    // Filtrar lista por usuario
     @Query("SELECT * FROM tabla_transacciones WHERE usuarioId = :userId ORDER BY fecha DESC")
     fun obtenerPorUsuario(userId: Int): LiveData<List<Transaccion>>
 
@@ -18,7 +18,7 @@ interface TransaccionDao {
     @Delete
     suspend fun borrar(transaccion: Transaccion)
 
-    // 2. Filtrar sumas por usuario
+    // Filtrar sumas por usuario
     @Query("SELECT COALESCE(SUM(monto), 0) FROM tabla_transacciones WHERE tipo = 'INGRESO' AND usuarioId = :userId")
     fun totalIngresos(userId: Int): LiveData<Double>
 

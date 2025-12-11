@@ -54,11 +54,11 @@ android {
 }
 
 dependencies {
-    // 1. Core Android
+    // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
 
-    // 2. JETPACK COMPOSE
+    // JETPACK COMPOSE
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
@@ -66,19 +66,19 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.runtime:runtime-livedata")
 
-    // 3. Navegación
+    // Navegación
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
-    // 4. Room (Base de Datos)
+    // Room (Base de Datos)
     val roomVersion = "2.6.1"
     implementation("androidx.room:room-runtime:$roomVersion")
     implementation("androidx.room:room-ktx:$roomVersion")
     kapt("androidx.room:room-compiler:$roomVersion")
 
-    // 5. ViewModel
+    // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
 
-    // 6. Extras (GPS e Imágenes)
+    // (GPS e Imágenes)
     implementation("com.google.android.gms:play-services-location:21.1.0")
     implementation("io.coil-kt:coil-compose:2.6.0")
 
@@ -91,7 +91,7 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // RETROFIT (Para conectarse a Internet)
+    // RETROFIT (Internet)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
 }

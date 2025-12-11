@@ -5,7 +5,7 @@ import org.junit.Assert.*
 
 class WalletUtilsTest {
 
-    // PRUEBA 1: Verificar que la resta de saldo sea correcta
+    // Verificar que la resta de saldo sea correcta
     @Test
     fun calcularSaldo_matematicaCorrecta() {
         val ingresos = 10000.0
@@ -14,21 +14,21 @@ class WalletUtilsTest {
         val resultadoEsperado = 5500.0
         val resultadoReal = WalletUtils.calcularSaldo(ingresos, gastos)
 
-        // Verificamos que sean iguales (el 0.0 es el margen de error permitido para decimales)
+        // Tiene que ser igual
         assertEquals(resultadoEsperado, resultadoReal, 0.0)
     }
 
-    // PRUEBA 2: Verificar que no acepte textos vacíos o letras como dinero
+    // Verificar que no acepte textos vacíos o letras como dinero
     @Test
     fun validacionMonto_letrasDanFalso() {
         val inputUsuario = "hola"
         val esValido = WalletUtils.esMontoValido(inputUsuario)
 
-        // Esperamos que sea Falso
+        // Tiene que ser Falso
         assertFalse(esValido)
     }
 
-    // PRUEBA 3: Verificar que acepte números positivos
+    // Verificar que acepte números positivos
     @Test
     fun validacionMonto_numerosDanVerdadero() {
         val inputUsuario = "5000"
@@ -37,7 +37,7 @@ class WalletUtilsTest {
         assertTrue(esValido)
     }
 
-    // PRUEBA 4: Verificar detección de saldo negativo
+    // Verificar detección de saldo negativo
     @Test
     fun detectarSaldoNegativo_funciona() {
         val saldo = -100.0

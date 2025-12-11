@@ -5,8 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-// Modifica tu archivo AppDatabase.kt para que quede así:
-
 @Database(entities = [Transaccion::class, Usuario::class], version = 3, exportSchema = false) // <--- OJO AQUÍ
 abstract class AppDatabase : RoomDatabase() {
 

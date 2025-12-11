@@ -20,8 +20,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
@@ -59,21 +61,17 @@ fun WalletScreen(
 ) {
     val context = LocalContext.current
 
-    // Al iniciar la pantalla, le decimos al ViewModel quién es el dueño
     LaunchedEffect(usuarioId) {
         viewModel.setUsuarioActual(usuarioId)
     }
 
-    // --- OBSERVADORES DE DATOS ---
     val listaTransacciones by viewModel.listaTransacciones.observeAsState(initial = emptyList())
     val totalIngresos by viewModel.totalIngresos.observeAsState(initial = 0.0)
     val totalGastos by viewModel.totalGastos.observeAsState(initial = 0.0)
     val saldo = (totalIngresos ?: 0.0) - (totalGastos ?: 0.0)
 
-    // --- OBSERVADOR DE SINCRONIZACIÓN (SPRING BOOT) ---
     val mensajeSync by viewModel.estadoSincronizacion.observeAsState("")
 
-    // Si hay mensaje de sincronización, mostramos Toast
     LaunchedEffect(mensajeSync) {
         if (mensajeSync.isNotEmpty()) {
             Toast.makeText(context, mensajeSync, Toast.LENGTH_SHORT).show()
@@ -81,7 +79,6 @@ fun WalletScreen(
         }
     }
 
-    // Estados de Diálogos
     var mostrarDialogo by remember { mutableStateOf(false) }
     var mostrarConversor by remember { mutableStateOf(false) }
 
@@ -95,17 +92,17 @@ fun WalletScreen(
                     actionIconContentColor = Color.White
                 ),
                 actions = {
-                    // 1. BOTÓN SINCRONIZAR (SPRING BOOT) - NUEVO
+                    // BOTÓN SINCRONIZAR
                     IconButton(onClick = { viewModel.sincronizarConNube() }) {
-                        Icon(Icons.Default.Share, contentDescription = "Sincronizar")
+                        Icon(Icons.Default.CheckCircle, contentDescription = "Sincronizar")
                     }
 
-                    // 2. BOTÓN CONVERSOR (API EXTERNA)
+                    // BOTÓN CONVERSOR
                     IconButton(onClick = { mostrarConversor = true }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Conversor")
+                        Icon(Icons.Default.Info, contentDescription = "Conversor")
                     }
 
-                    // 3. BOTÓN SALIR
+                    // BOTÓN SALIR
                     IconButton(onClick = onLogout) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión")
                     }
@@ -124,7 +121,7 @@ fun WalletScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // 1. TARJETA DE SALDO CON ANIMACIÓN
+            // ANIMACIÓN SALDO
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
                 modifier = Modifier
@@ -163,7 +160,7 @@ fun WalletScreen(
                 }
             }
 
-            // 2. LISTA DE MOVIMIENTOS
+            // MOVIMIENTOS
             Text("Últimos movimientos", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -197,7 +194,6 @@ fun WalletScreen(
     }
 }
 
-// --- COMPONENTE: FILA DE TRANSACCIÓN ---
 @Composable
 fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
     val context = LocalContext.current
@@ -231,7 +227,6 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
                     Spacer(modifier = Modifier.width(16.dp))
                 }
 
-                // DATOS TEXTO
                 Column {
                     Text(transaccion.titulo, fontWeight = FontWeight.Bold)
                     val fechaFormato = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(transaccion.fecha))
@@ -273,7 +268,7 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
         }
     }
 
-    // POPUP FOTO GRANDE
+    // AGRANDAR FOTO
     if (mostrarFotoGrande) {
         Dialog(onDismissRequest = { mostrarFotoGrande = false }) {
             Card(
@@ -303,7 +298,7 @@ fun ItemTransaccion(transaccion: Transaccion, onDelete: (Transaccion) -> Unit) {
     }
 }
 
-// --- DIÁLOGO AGREGAR ---
+// DIÁLOGO AGREGAR
 @Composable
 fun DialogoAgregarTransaccion(onDismiss: () -> Unit, onConfirm: (String, String, Boolean, String, Double, Double) -> Unit) {
     val context = LocalContext.current
@@ -411,7 +406,7 @@ fun crearArchivoImagen(context: android.content.Context): java.io.File {
     return java.io.File.createTempFile(nombreArchivo, ".jpg", directorio)
 }
 
-// --- DIÁLOGO CONVERSOR ---
+// DIÁLOGO CONVERSOR
 @Composable
 fun DialogoConversor(viewModel: WalletViewModel, onDismiss: () -> Unit) {
     var monto by remember { mutableStateOf("") }
